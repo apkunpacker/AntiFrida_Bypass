@@ -3,7 +3,7 @@ Generic Script To Bypass Some AntiFrida Checks
 
 Feel Free to send more Bypass as a PR or Improve it.
 
-Note - It won't work for Bypassing Frida Checks with Direct Syscalls 
+Note - It won't support for Bypassing Frida Checks with Direct Syscalls yet 
 
 Roadmap -
 1. Add Syscall Check Bypass
