@@ -76,18 +76,13 @@ Interceptor.replace(p_pthread_create, new NativeCallback(function(ptr0, ptr1, pt
 }, "int", ["pointer", "pointer", "pointer", "pointer"]));
 
 function gmn(fnPtr) {
-    if (fnPtr != null) {
-        try {
-            var nms;
-            var mn = Process.getModuleByAddress(fnPtr);
-            nms = mn.name;
-        } catch (e) {}
-        return nms;
+     if (fnPtr != null) {
+        try {          
+            return Process.getModuleByAddress(fnPtr).name;          
+        } catch (e) {console.error(e);}            
     }
 }
-/* few method might check frida presence so added them 
-if process freeze you can comment these 
-*/
+/* few method might check frida presence so added them */
 var inet_atonPtr = Module.findExportByName("libc.so", "inet_aton");
 var inet_aton = new NativeFunction(inet_atonPtr, 'int', ['pointer', 'pointer']);
 Interceptor.replace(inet_atonPtr, new NativeCallback(function(addrs, structure) {
@@ -183,11 +178,6 @@ var Open64MapsBuffer = Memory.alloc(512);
 Interceptor.replace(openPtr, new NativeCallback(function(pathname, flag) {
     var FD = open(pathname, flag);
     var ch = pathname.readCString();
-    /*
-    if(ch.indexOf("lib")>=0 && ch.indexOf(".so")>=0) {
-      return FD;
-    }
-    */
     if (ch.indexOf("/proc/") >= 0 && ch.indexOf("maps") >= 0) {
           console.log("open : ", pathname.readCString()) 
         while (parseInt(read(FD, MapsBuffer, 512)) !== 0) {
@@ -252,6 +242,8 @@ Interceptor.replace(openPtr, new NativeCallback(function(pathname, flag) {
             buffer = buffer.replaceAll("/sbin/.magisk", "FakingTask");
             buffer = buffer.replaceAll("libriru", "FakingTask");
             buffer = buffer.replaceAll("xposed", "FakingTask");
+            buffer = buffer.replaceAll("pool-spawner", "FakingTask");
+            buffer = buffer.replaceAll("gdbus", "FakingTask");            
             TaskFile.write(buffer);
             // console.log(buffer);
         }
@@ -420,6 +412,7 @@ Interceptor.attach(Module.findExportByName(null, "strstr"),{
           str1.indexOf("frida_agent_main")!==-1  || str2.indexOf("frida_agent_main")!==-1 ||
           str1.indexOf("re.frida.server")!==-1  || str2.indexOf("re.frida.server")!==-1 ||
           str1.indexOf("frida-agent")!==-1  || str2.indexOf("frida-agent")!==-1 ||
+          str1.indexOf("pool-spawner")!==-1  || str2.indexOf("pool-spawner")!==-1 ||
           str1.indexOf("frida-agent-64.so")!==-1  || str2.indexOf("frida-agent-64.so")!==-1 ||
           str1.indexOf("frida-agent-32.so")!==-1  || str2.indexOf("frida-agent-32.so")!==-1 ||
           str1.indexOf("frida-helper-32.so")!==-1  || str2.indexOf("frida-helper-32.so")!==-1 ||
@@ -478,89 +471,7 @@ Interceptor.attach(Module.findExportByName("libc.so", "read"), {
     }
 });
 */
-/*
-var fopenPtr = Module.findExportByName("libc.so", "fopen");
-var fopen = new NativeFunction(fopenPtr, 'pointer', ['pointer', 'pointer']);
-Interceptor.replace(fopenPtr, new NativeCallback(function(path, mode) {
-    var FD = fopen(path, mode);
-    // console.warn(FD);
-    var ch = path.readCString();  
-   
-    if (ch.indexOf("/proc") >=0  && ch.indexOf("maps") >=0) {     
-         console.log("fopen : ", path.readCString())         
-        // FMapsFile.write("StaySafe");            
-        while (parseInt(read(FD, FopenBuffer, 512)) !== 0) {
-        var MBuffer = MapsBuffer.readCString();                                                           
-        var FOBuffer = MapsBuffer.readCString();                                                           
-        FOBuffer = FOBuffer.replaceAll("frida-agent-64.so","StaySafeStayHappy");
-        FOBuffer = FOBuffer.replaceAll("frida-agent-32.so","StaySafeStayHappy");
-        FOBuffer = FOBuffer.replaceAll("re.frida.server","StaySafeStayHappy");
-        FOBuffer = FOBuffer.replaceAll("frida-helper-32","StaySafeStayHappy");        
-        FOBuffer = FOBuffer.replaceAll("frida-helper","StaySafeStayHappy"); 
-        FOBuffer = FOBuffer.replaceAll("frida-agent","StaySafeStayHappy");        
-        FOBuffer = FOBuffer.replaceAll("pool-frida","StaySafeStayHappy");            
-        FOBuffer = FOBuffer.replaceAll("frida","StaySafeStayHappy");
-        FOBuffer = FOBuffer.replaceAll("/data/local/tmp","/data");
-        FOBuffer = FOBuffer.replaceAll("frida-server","StaySafeStayHappy");
-        FOBuffer = FOBuffer.replaceAll("linjector","StaySafeStayHappy");
-        FOBuffer = FOBuffer.replaceAll("gum-js-loop","StaySafeStayHappy");
-        FOBuffer = FOBuffer.replaceAll("frida_agent_main","StaySafeStayHappy");
-        FOBuffer = FOBuffer.replaceAll("gmain","StaySafeStayHappy");                    
-        FMapsFile.write(FOBuffer);                                                      
-                }                
-                var FN = Memory.allocUtf8String(FOpenMaps);
-                return fopen(FN, mode);                 
-    }  
-    return FD;
-}, 'pointer', ['pointer', 'pointer']))
-*/
-/*
-var open64Ptr = Module.findExportByName("libc.so", "open64");
-var open64 = new NativeFunction(open64Ptr, 'int', ['pointer', 'int']);
-Interceptor.replace(open64Ptr, new NativeCallback(function(pathname, flag) {
-    var FDR = open64(pathname, flag);
-    var Path = pathname.readCString();
-      if (Path.indexOf("/proc/") >=0 && Path.indexOf("maps") >=0) {     
-       //  console.log("open : ", pathname.readCString()) 
-        while (parseInt(read(FDR, Open64MapsBuffer, 512)) !== 0) {
-        var MBuffer = Open64MapsBuffer.readCString();                
-        MBuffer = MBuffer.replaceAll("/data/local/tmp/re.frida.server/frida-agent-64.so","FakingMaps");  
-        MBuffer = MBuffer.replaceAll("re.frida.server","FakingMaps");                                                             
-        MBuffer = MBuffer.replaceAll("frida-agent-64.so","FakingMaps");
-        MBuffer = MBuffer.replaceAll("rida-agent-64.so","FakingMaps");
-        MBuffer = MBuffer.replaceAll("agent-64.so","FakingMaps");        
-        MBuffer = MBuffer.replaceAll("frida-agent-32.so","FakingMaps");       
-        MBuffer = MBuffer.replaceAll("frida-helper-32","FakingMaps");        
-        MBuffer = MBuffer.replaceAll("frida-helper","FakingMaps"); 
-        MBuffer = MBuffer.replaceAll("frida-agent","FakingMaps");        
-        MBuffer = MBuffer.replaceAll("pool-frida","FakingMaps");            
-        MBuffer = MBuffer.replaceAll("frida","FakingMaps");
-        MBuffer = MBuffer.replaceAll("frida-","FakingMaps");
-        MBuffer = MBuffer.replaceAll("/data/local/tmp","/data");
-        MBuffer = MBuffer.replaceAll("server","FakingMaps");
-        MBuffer = MBuffer.replaceAll("frida-server","FakingMaps");
-        MBuffer = MBuffer.replaceAll("linjector","FakingMaps");
-        MBuffer = MBuffer.replaceAll("gum-js-loop","FakingMaps");
-        MBuffer = MBuffer.replaceAll("frida_agent_main","FakingMaps");
-        MBuffer = MBuffer.replaceAll("gmain","FakingMaps");
-        MBuffer = MBuffer.replaceAll("frida","FakingMaps");
-        MBuffer = MBuffer.replaceAll("magisk","FakingMaps"); 
-        MBuffer = MBuffer.replaceAll(".magisk","FakingMaps"); 
-        MBuffer = MBuffer.replaceAll("/sbin/.magisk","FakingMaps");         
-        MBuffer = MBuffer.replaceAll("libriru","FakingMaps");  
-        MBuffer = MBuffer.replaceAll("xposed","FakingMaps");
-        
-        
-        MapsFile.write(MBuffer);   
-             console.log("MBuffer : ",MBuffer);                                     
-                }
-                var filename = Memory.allocUtf8String(FakeMaps);
-                return open64(filename, flag);  
-    }
-    return FDR;
-}, 'int', ['pointer', 'int']))
 
-*/
 /*
 var memcpyPtr = Module.findExportByName("libc.so", "memcpy");
 var memcpy = new NativeFunction(memcpyPtr, 'pointer', ['pointer', 'pointer', 'int']);
