@@ -91,6 +91,9 @@ var StatusBuffer = Memory.alloc(512);
 Interceptor.replace(openPtr, new NativeCallback(function(pathname, flag) {
     var FD = open(pathname, flag);
     var ch = pathname.readCString();
+    if (ch.indexOf("/proc/") >= 0 && ch.indexOf("maps") >= 0) {
+        console.warn("Possible Frida Detection",ch)
+    }
     if (HookMaps) {
         if (ch.indexOf("/proc/") >= 0 && ch.indexOf("maps") >= 0) {
             console.log("open : ", pathname.readCString())
