@@ -43,7 +43,7 @@ Interceptor.attach(Module.getExportByName(null, "android_dlopen_ext"), {
 					})
 				},
 				onComplete: function(msg) {
-				  console.log("Frida Detection Bypassed");
+					console.log("Frida Detection Bypassed");
 				}
 			})
 		}
