@@ -3,7 +3,7 @@ Created By @apkunpacker
 It only bypass anti-frida detection which crash app even after frida-server is closed.
 It won't work if you use it with anti java hook ( Java.use("xyz") )
 Java.use have seperate detections.
-I hate those guy who sells open source scripts
+I hate those guys who sell open source scripts.
 */
 Interceptor.attach(Module.findExportByName(null, "strlen"), {
     onEnter: function(args) {
